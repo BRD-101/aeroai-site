@@ -187,15 +187,15 @@ img { display:block; max-width:100%; }
 .hero-photo {
   position:absolute; inset:0;
   background: url('hero-bg.jpg') center/cover no-repeat;
-  opacity:.22;
+  opacity:.45;
 }
 
 /* Dark gradient over photo */
 .hero-overlay {
   position:absolute; inset:0;
   background:
-    linear-gradient(to right, rgba(3,6,15,.96) 0%, rgba(3,6,15,.75) 55%, rgba(3,6,15,.5) 100%),
-    linear-gradient(to top, rgba(3,6,15,.8) 0%, transparent 50%);
+    linear-gradient(to right, rgba(3,6,15,.85) 0%, rgba(3,6,15,.5) 55%, rgba(3,6,15,.25) 100%),
+    linear-gradient(to top, rgba(3,6,15,.5) 0%, transparent 50%);
 }
 
 /* AI glow orb */
@@ -219,13 +219,9 @@ img { display:block; max-width:100%; }
   background-size:56px 56px;
 }
 
-/* Scan line */
+/* Scan line — disabled */
 .hero-scan {
-  position:absolute; left:0; right:0; height:1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(26,122,204,.5) 30%, rgba(26,122,204,.8) 50%, rgba(26,122,204,.5) 70%, transparent 100%);
-  animation: scan-line 6s linear infinite;
-  pointer-events:none;
-  opacity:.4;
+  display:none;
 }
 
 /* Vertical blue bar */
@@ -968,7 +964,7 @@ img { display:block; max-width:100%; }
 
     <div class="product-visual reveal d1">
       <div class="product-photo-wrap">
-        <img src="hero-bg.jpg" alt="Jet engine — aeroAI fleet technology" class="product-photo" loading="lazy">
+        <img src="product-photo.jpg" alt="Jet engine — aeroAI fleet technology" class="product-photo" loading="lazy">
         <span class="product-corner-bl" aria-hidden="true"></span>
         <div class="product-data-overlay" aria-hidden="true">
           <div>
