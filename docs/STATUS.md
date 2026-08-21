@@ -21,11 +21,10 @@ Public marketing site for aeroAI, `aeroai.ai`. Single-page static site — `inde
 - No deployment path recorded here. Bridgeway's site deploys via Cloudflare Pages
   on commit; whether this one does is not written down anywhere.
 
-## Recent
-
-- **2026-03-17** — hero brightened (opacity .85, lighter overlay gradients). Last
-  commit.
-
 ## How this file is used
 
 Update at session end, then run `python3 ~/dev/_estate/tools/fi_status_rollup.py`.
+
+---
+
+Dated history for this module lives in [`HISTORY.md`](HISTORY.md).
