@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal | aeroAI</title>
+<meta name="description" content="Where aviation meets intelligence — aviation news with an AI implication, from aeroAI.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="aeroAI-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Barlow+Condensed:ital,wght@0,300;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  /* aeroAI palette, kept in step with index.html. This page is standalone
+     because the site has no shared stylesheet — index.html carries its CSS
+     inline. Only the tokens the reader needs are repeated here. */
+  :root {
+    --bg-deep:    #03060F;
+    --bg-surface: #070D1A;
+    --blue:       #0B5EA8;
+    --blue-lt:    #1A7ACC;
+    --white:      #FFFFFF;
+    --muted:      rgba(255,255,255,0.52);
+    --rule:       rgba(26,122,204,0.18);
+    --cond:       'Barlow Condensed', sans-serif;
+    --body:       'Barlow', sans-serif;
+    --gutter:     clamp(1.5rem, 5vw, 5rem);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg-deep); color:var(--white);
+    font-family:var(--body); -webkit-font-smoothing:antialiased;
+  }
+  a { text-decoration:none; color:inherit; }
+
+  .article-page { max-width:760px; margin:0 auto; padding:5rem var(--gutter) 5rem; }
+  .article-back {
+    display:inline-block; font-family:var(--cond); font-size:.8rem; font-weight:600;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--blue-lt); margin-bottom:2.2rem;
+  }
+  .article-back:hover { text-decoration:underline; }
+  .article-meta {
+    font-family:var(--cond); font-size:.78rem; font-weight:500; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--blue-lt); margin-bottom:.9rem;
+  }
+  .article-headline {
+    font-family:var(--cond); font-size:clamp(1.9rem, 4.4vw, 3rem); font-weight:700;
+    line-height:1.08; text-transform:uppercase; letter-spacing:.005em; color:var(--white);
+  }
+  .article-rule { width:56px; height:3px; background:var(--blue-lt); margin:1.6rem 0 2.2rem; }
+  .article-subhead {
+    font-family:var(--cond); font-size:1.2rem; font-weight:600; letter-spacing:.02em;
+    color:var(--white); margin:2rem 0 .9rem; max-width:68ch;
+  }
+  .article-body p {
+    font-size:1rem; font-weight:300; line-height:1.85;
+    color:rgba(255,255,255,.78); margin-bottom:1.2rem; max-width:68ch;
+  }
+  .article-source {
+    margin-top:2.5rem; padding-top:1.2rem; border-top:1px solid var(--rule);
+    font-size:.85rem; font-weight:300; color:var(--muted);
+  }
+  .article-source a { color:var(--blue-lt); }
+  .article-source a:hover { text-decoration:underline; }
+  .article-missing { font-size:1rem; font-weight:300; color:var(--muted); padding:3rem 0; }
+</style>
+</head>
+<body>
+
+<main class="article-page">
+  <a href="index.html#news" class="article-back">← Back to aeroai.ai</a>
+  <div id="articleRoot">
+    <p class="article-missing">Loading…</p>
+  </div>
+</main>
+
+<script>
+(function() {
+  'use strict';
+  var SECTIONS = { AI_TECH: 'AI & Technology', MRO: 'MRO & Maintenance', OPS_FINANCE: 'Operations & Finance' };
+  var root = document.getElementById('articleRoot');
+  var id = new URLSearchParams(window.location.search).get('id');
+
+  function showMissing() {
+    root.textContent = '';
+    var p = document.createElement('p');
+    p.className = 'article-missing';
+    p.textContent = 'This article isn’t available. It may have been moved or removed.';
+    root.appendChild(p);
+  }
+
+  // Bodies arrive from the content pipeline as Markdown: ATX headings and
+  // **bold**. Built as DOM nodes rather than innerHTML so article text can
+  // never inject markup. Anything unrecognised falls through as plain text.
+  function inlineMarkdown(text, el) {
+    var re = /(\*\*|__)(.+?)\1|(\*|_)(.+?)\3/g;
+    var last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var bold = m[2] !== undefined;
+      var node = document.createElement(bold ? 'strong' : 'em');
+      node.textContent = bold ? m[2] : m[4];
+      el.appendChild(node);
+      last = re.lastIndex;
+    }
+    if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+  }
+
+  function renderBody(text, container) {
+    var lines = String(text || '').split(/\n/);
+    var para = [];
+    function flush() {
+      if (!para.length) return;
+      var p = document.createElement('p');
+      inlineMarkdown(para.join(' ').trim(), p);
+      container.appendChild(p);
+      para = [];
+    }
+    lines.forEach(function(line) {
+      var t = line.trim();
+      if (!t) { flush(); return; }
+      var h = /^(#{1,6})\s+(.*)$/.exec(t);
+      if (h) {
+        flush();
+        var el = document.createElement('h2');
+        el.className = 'article-subhead';
+        inlineMarkdown(h[2].trim(), el);
+        container.appendChild(el);
+        return;
+      }
+      // A standalone **bolded** line is a subhead in these drafts, not a paragraph.
+      var b = /^\*\*(.+)\*\*$/.exec(t);
+      if (b) {
+        flush();
+        var el2 = document.createElement('h2');
+        el2.className = 'article-subhead';
+        el2.textContent = b[1].trim();
+        container.appendChild(el2);
+        return;
+      }
+      para.push(t);
+    });
+    flush();
+  }
+
+  function render(post) {
+    document.title = post.headline + ' | aeroAI';
+    root.textContent = '';
+
+    var d = new Date(post.published_at);
+    var dateStr = isNaN(d) ? '' : d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+    var meta = document.createElement('p');
+    meta.className = 'article-meta';
+    meta.textContent = (SECTIONS[post.section] || 'Aviation') + '  ·  ' + dateStr;
+
+    var h1 = document.createElement('h1');
+    h1.className = 'article-headline';
+    h1.textContent = post.headline || '';
+
+    var rule = document.createElement('div');
+    rule.className = 'article-rule';
+
+    var body = document.createElement('div');
+    body.className = 'article-body';
+    renderBody(post.body, body);
+
+    root.appendChild(meta);
+    root.appendChild(h1);
+    root.appendChild(rule);
+    root.appendChild(body);
+
+    if (post.source_url || post.source) {
+      var src = document.createElement('p');
+      src.className = 'article-source';
+      src.appendChild(document.createTextNode(
+        'Reporting based on coverage from ' + (post.source || 'the source') + '. '));
+      if (post.source_url) {
+        var a = document.createElement('a');
+        a.href = post.source_url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = 'Read the original article ↗';
+        src.appendChild(a);
+      }
+      root.appendChild(src);
+    }
+  }
+
+  if (!id) { showMissing(); return; }
+
+  fetch('assets/blog/posts.json')
+    .then(function(res) { if (!res.ok) throw new Error('no posts'); return res.json(); })
+    .then(function(data) {
+      var all = (data.posts || []).concat(data.opinions || []);
+      if (data.featured) all.push(data.featured);
+      var post = all.filter(function(p) { return p.id === id; })[0];
+      if (!post) { showMissing(); return; }
+      render(post);
+    })
+    .catch(showMissing);
+})();
+</script>
+
+</body>
+</html>
