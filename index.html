@@ -535,6 +535,77 @@ img { display:block; max-width:100%; }
   color:var(--white); line-height:1.05;
 }
 
+/* ═══ AI NEWS FEED ═══
+   Fed by news-content-pipeline: Module 1 classifies an item AI_TECH when the
+   story has a genuine AI, ML or automation angle in an aviation context, and
+   Content Desk publishes it here instead of to BridgewayAeroTech.com. Section
+   and nav link stay hidden until posts.json has content, so an empty feed is
+   invisible rather than broken. */
+.newsfeed { padding:6rem 0 5rem; background:var(--bg-surface); border-top:1px solid var(--rule); }
+.newsfeed-header { max-width:var(--max); margin:0 auto 2.5rem; padding:0 var(--gutter); }
+
+.news-grid {
+  max-width:var(--max); margin:0 auto;
+  display:grid; grid-template-columns:repeat(3, 1fr);
+  gap:1.5px; background:var(--rule);
+  border:1.5px solid var(--rule);
+}
+.news-card {
+  background:var(--bg-card); padding:2rem 1.75rem;
+  display:flex; flex-direction:column; transition:background .22s;
+}
+.news-card:hover { background:var(--bg-card2); }
+.news-meta {
+  font-family:var(--cond); font-size:.62rem; font-weight:500;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--blue-lt);
+  margin-bottom:.85rem;
+}
+.news-title {
+  font-family:var(--cond); font-size:1.22rem; font-weight:600; line-height:1.25;
+  text-transform:uppercase; letter-spacing:.02em; color:var(--white); margin-bottom:.8rem;
+}
+.news-excerpt {
+  font-family:var(--body); font-size:.85rem; font-weight:300; line-height:1.7;
+  color:var(--muted); margin-bottom:1.4rem; flex:1;
+}
+.news-read {
+  font-family:var(--cond); font-size:.68rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--blue-lt);
+  display:inline-flex; align-items:center; gap:.45rem; transition:gap .2s;
+}
+.news-card:hover .news-read { gap:.75rem; }
+
+/* Ticker. Duplicated track so the loop has no visible seam; aria-hidden on the
+   copy so screen readers do not read every headline twice. */
+.news-ticker {
+  margin-top:2.5rem; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
+  background:var(--bg-deep); overflow:hidden; position:relative;
+}
+.news-ticker::before, .news-ticker::after {
+  content:''; position:absolute; top:0; bottom:0; width:6rem; z-index:2; pointer-events:none;
+}
+.news-ticker::before { left:0;  background:linear-gradient(90deg, var(--bg-deep), transparent); }
+.news-ticker::after  { right:0; background:linear-gradient(270deg, var(--bg-deep), transparent); }
+.ticker-track { display:flex; width:max-content; animation:ticker 70s linear infinite; }
+.news-ticker:hover .ticker-track { animation-play-state:paused; }
+.ticker-item {
+  font-family:var(--cond); font-size:.78rem; font-weight:500; letter-spacing:.09em;
+  text-transform:uppercase; color:rgba(255,255,255,.62);
+  padding:.85rem 0; white-space:nowrap; display:inline-flex; align-items:center;
+}
+.ticker-item::after {
+  content:'◆'; color:var(--blue-lt); font-size:.5rem; margin:0 1.6rem; opacity:.7;
+}
+.ticker-item:hover { color:var(--white); }
+@keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation:none; }
+}
+@media (max-width: 900px) {
+  .news-grid { grid-template-columns:1fr; }
+}
+
 .pillars-grid {
   max-width:var(--max); margin:0 auto;
   display:grid; grid-template-columns:repeat(3, 1fr);
@@ -875,7 +946,8 @@ img { display:block; max-width:100%; }
     <ul class="nav-links" role="list">
       <li><a href="#product">Fleet Monitor</a></li>
       <li><a href="#about">About</a></li>
-      <li><a href="#access">Portal Access</a></li>
+      <li><a href="#news" class="nav-news-link" hidden>Signal</a>
+        <a href="#access">Portal Access</a></li>
       <li><a href="https://bridgewayaerotech.com" target="_blank" rel="noopener" class="nav-bat-link">Bridgeway Aero Tech ↗</a></li>
       <li><a href="mailto:info@aeroai.ai?subject=Fleet%20Monitor%20Access%20Request&body=I%20am%20interested%20in%20learning%20more%20about%20Fleet%20Monitor.%20Please%20contact%20me." target="_blank" rel="noopener" class="nav-cta">Request Access</a></li>
     </ul>
@@ -1004,6 +1076,18 @@ img { display:block; max-width:100%; }
       <h3 class="pillar-title">Built by People Who Know Aviation</h3>
       <p class="pillar-body">aeroAI is developed in partnership with Bridgeway Aero Tech — 35+ years of hands-on aviation expertise informing every tool we build.</p>
     </div>
+  </div>
+</section>
+
+<!-- ═══ AI NEWS FEED — populated from assets/blog/posts.json ═══ -->
+<section class="newsfeed" id="news" aria-labelledby="news-heading" hidden>
+  <div class="newsfeed-header reveal">
+    <span class="section-eyebrow">Signal</span>
+    <h2 class="section-title" id="news-heading">Where aviation<br>meets intelligence.</h2>
+  </div>
+  <div class="news-grid" id="newsGrid"></div>
+  <div class="news-ticker" id="newsTicker" aria-label="Latest aviation AI headlines" hidden>
+    <div class="ticker-track" id="tickerTrack"></div>
   </div>
 </section>
 
@@ -1171,6 +1255,82 @@ img { display:block; max-width:100%; }
     entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
   }, {threshold:.1});
   document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  // ═══ AI news feed — rendered from assets/blog/posts.json ═══
+  // Written by the Content Desk publisher when an article is published to the
+  // aeroAI target. Three cards across, matching the pillars grid, plus a
+  // ticker of the wider headline set. Section stays hidden until posts exist.
+  const NEWS_SECTIONS = { AI_TECH: 'AI & Technology', MRO: 'MRO & Maintenance', OPS_FINANCE: 'Operations & Finance' };
+
+  function newsDate(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  }
+
+  function renderNewsCards(posts, count) {
+    const grid = document.getElementById('newsGrid');
+    if (!grid) return;
+    posts.slice(0, count || 3).forEach((post, i) => {
+      const card = document.createElement('article');
+      card.className = 'news-card reveal' + (i ? ' d' + i : '');
+
+      const meta = document.createElement('p');
+      meta.className = 'news-meta';
+      meta.textContent = (NEWS_SECTIONS[post.section] || 'Aviation') + '  ·  ' + newsDate(post.published_at);
+
+      const title = document.createElement('h3');
+      title.className = 'news-title';
+      title.textContent = post.headline || '';
+
+      const excerpt = document.createElement('p');
+      excerpt.className = 'news-excerpt';
+      excerpt.textContent = post.summary || '';
+
+      const link = document.createElement('a');
+      link.className = 'news-read';
+      link.href = 'article.html?id=' + encodeURIComponent(post.id);
+      link.textContent = 'Read Article  →';
+
+      card.append(meta, title, excerpt, link);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTicker(posts) {
+    const wrap = document.getElementById('newsTicker');
+    const track = document.getElementById('tickerTrack');
+    if (!wrap || !track || posts.length < 2) return;
+    // Two identical passes so the -50% keyframe loops seamlessly. The copy is
+    // aria-hidden so the headlines are announced once, not twice.
+    for (let pass = 0; pass < 2; pass++) {
+      const group = document.createElement('div');
+      group.style.display = 'flex';
+      if (pass === 1) group.setAttribute('aria-hidden', 'true');
+      posts.forEach(post => {
+        const a = document.createElement('a');
+        a.className = 'ticker-item';
+        a.href = 'article.html?id=' + encodeURIComponent(post.id);
+        a.textContent = post.headline || '';
+        group.appendChild(a);
+      });
+      track.appendChild(group);
+    }
+    wrap.hidden = false;
+  }
+
+  fetch('assets/blog/posts.json')
+    .then(res => { if (!res.ok) throw new Error('no posts'); return res.json(); })
+    .then(data => {
+      const posts = data.posts || [];
+      if (!posts.length) return;               // nothing yet — section stays hidden
+      renderNewsCards(posts, data.landing_count);
+      renderTicker(posts);
+      const section = document.getElementById('news');
+      section.hidden = false;
+      document.querySelectorAll('.nav-news-link').forEach(el => { el.hidden = false; });
+      section.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    })
+    .catch(() => { /* no posts yet — section stays hidden */ });
 
   // Chat widget
   const chatBtn  = document.getElementById('chatBtn');
